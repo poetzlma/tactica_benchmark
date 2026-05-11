@@ -926,6 +926,33 @@ async function main() {
 
   roundSelect.addEventListener("change", (e) => loadAndRender(e.target.value));
 
+  // ---------- mobile drawers ----------
+
+  const edgeRed = document.getElementById("edge-red");
+  const edgeBlue = document.getElementById("edge-blue");
+  const backdrop = document.getElementById("drawer-backdrop");
+  const redPanelEl = document.getElementById("red-panel");
+  const bluePanelEl = document.getElementById("blue-panel");
+  const closeBtns = document.querySelectorAll(".drawer-close");
+
+  function openDrawer(team) {
+    redPanelEl.classList.toggle("drawer-open", team === "red");
+    bluePanelEl.classList.toggle("drawer-open", team === "blue");
+    backdrop.classList.toggle("active", team === "red" || team === "blue");
+  }
+  function closeDrawers() {
+    redPanelEl.classList.remove("drawer-open");
+    bluePanelEl.classList.remove("drawer-open");
+    backdrop.classList.remove("active");
+  }
+  edgeRed.addEventListener("click", () => openDrawer("red"));
+  edgeBlue.addEventListener("click", () => openDrawer("blue"));
+  backdrop.addEventListener("click", closeDrawers);
+  for (const b of closeBtns) b.addEventListener("click", closeDrawers);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawers();
+  });
+
   // ---------- tournament controls ----------
 
   let lastStatus = "idle";

@@ -168,6 +168,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WEB_DIR, **kwargs)
 
+    def end_headers(self):
+        # Disable caching for everything we serve (static + API) so mobile
+        # browsers don't sit on stale HTML/JS.
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/api/state":
