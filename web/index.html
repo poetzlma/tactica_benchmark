@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tactica — Replay</title>
+  <style>
+    :root {
+      --bg: #0f1218;
+      --panel: #161b24;
+      --panel-2: #1c222c;
+      --panel-3: #232a36;
+      --border: #262d3a;
+      --text: #d8dde7;
+      --text-dim: #7a8294;
+      --text-dim2: #5a6172;
+      --accent: #4090e0;
+      --red: #e04848;
+      --blue: #4090e0;
+      --green: #4cc06f;
+      --warn: #d8a040;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100%; overflow: hidden; }
+    #app { display: grid; grid-template-rows: 48px 1fr 110px; height: 100vh; }
+
+    header { display: flex; align-items: center; gap: 12px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 16px; margin: 0; letter-spacing: 0.5px; }
+    header select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; font: inherit; font-size: 12px; max-width: 220px; }
+    .pill { padding: 4px 10px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+    .pill.red { color: var(--red); }
+    .pill.blue { color: var(--blue); }
+    .pill.outcome { color: var(--green); }
+
+    main { display: grid; grid-template-columns: 360px 1fr 360px; gap: 8px; padding: 8px; min-height: 0; }
+    .side-panel { display: grid; grid-template-rows: auto auto 1fr; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; min-height: 0; overflow: hidden; }
+    .panel-header { padding: 10px 12px 6px; border-bottom: 1px solid var(--border); }
+    .panel-header h2 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+    .panel-header h2.red { color: var(--red); }
+    .panel-header h2.blue { color: var(--blue); }
+    .model-pill { font-size: 11px; padding: 2px 6px; border-radius: 8px; background: var(--panel-3); color: var(--text-dim); text-transform: none; letter-spacing: 0; font-weight: normal; }
+
+    .tab-bar { display: flex; padding: 8px 8px 0; gap: 4px; border-bottom: 1px solid var(--border); background: var(--panel); }
+    .tab { background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--text-dim); padding: 6px 10px; font-size: 12px; cursor: pointer; border-radius: 4px 4px 0 0; }
+    .tab:hover { color: var(--text); background: var(--panel-2); }
+    .tab.active { color: var(--text); background: var(--panel-3); border-color: var(--border); position: relative; top: 1px; }
+
+    .panel-content { overflow: auto; padding: 12px; min-height: 0; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-content.code { display: none; }
+    .tab-content.code.active { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+
+    .utype-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .utab { background: var(--panel-2); border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; }
+    .utab:hover { color: var(--text); }
+    .utab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    pre { margin: 0; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font: 11.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: var(--text); white-space: pre-wrap; word-break: break-word; overflow: auto; }
+    pre.code-view { flex: 1; min-height: 0; white-space: pre; }
+    pre.empty { color: var(--text-dim2); font-style: italic; }
+
+    .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .comp-table th { text-align: left; color: var(--text-dim); font-weight: normal; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+    .comp-table td { padding: 4px 6px; border-bottom: 1px dashed var(--border); }
+    .comp-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-table tr.total { background: var(--panel-2); font-weight: bold; }
+
+    .report-view { font: 13px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .report-view h1 { font-size: 15px; margin: 0 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    .report-view h2 { font-size: 13px; margin: 14px 0 4px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    .report-view ul { margin: 4px 0 8px; padding-left: 18px; }
+    .report-view li { margin: 1px 0; }
+    .report-view strong { color: var(--text); }
+    .report-view table { border-collapse: collapse; margin: 6px 0; font-size: 11.5px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+    .report-view table th, .report-view table td { padding: 3px 6px; border: 1px solid var(--border); }
+    .report-view table th { background: var(--panel-2); color: var(--text-dim); font-weight: normal; text-align: left; }
+    .report-view table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .report-view hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+    .report-view code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 11.5px; }
+    .report-view pre { font-size: 11.5px; }
+
+    .reason-view { font: 13px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); white-space: pre-wrap; }
+
+    #canvas-host { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; overflow: hidden; }
+    #canvas-host canvas { display: block; max-width: 100%; max-height: 100%; }
+
+    footer { padding: 10px 16px; background: var(--panel); border-top: 1px solid var(--border); display: grid; grid-template-rows: auto auto; gap: 6px; }
+    .controls-row { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 12px; align-items: center; }
+    button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-family: inherit; }
+    button:hover { background: var(--panel-3); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.primary:hover { background: #4f9ee8; }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    .tick-display { font-variant-numeric: tabular-nums; min-width: 130px; text-align: right; color: var(--text-dim); font-size: 13px; }
+    select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; font-family: inherit; font-size: 13px; }
+
+    #event-strip { display: flex; gap: 8px; overflow-x: auto; font: 11px/1.4 ui-monospace, "SF Mono", Menlo, monospace; color: var(--text-dim); max-height: 28px; align-items: center; }
+    #event-strip .ev { white-space: nowrap; padding: 2px 8px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--border); }
+    #event-strip .ev.kill { color: var(--warn); }
+    #event-strip .ev .t { color: var(--text-dim2); margin-right: 6px; }
+
+    .empty-msg { color: var(--text-dim2); font-style: italic; padding: 8px 0; }
+
+    #tournament-status.running { color: var(--warn); border-color: var(--warn); animation: pulse 1.4s ease-in-out infinite; }
+    #tournament-status.done { color: var(--green); border-color: var(--green); }
+    #tournament-status.error { color: var(--red); border-color: var(--red); }
+    @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.55 } }
+
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>TACTICA</h1>
+      <span class="pill" id="seed-pill">seed —</span>
+      <span class="pill" id="round-pill">round —</span>
+      <select id="round-select" style="display:none"></select>
+      <span class="pill red" id="red-pill">RED —</span>
+      <span class="pill blue" id="blue-pill">BLUE —</span>
+      <span class="pill outcome" id="outcome-pill">—</span>
+      <span style="flex:1"></span>
+      <span id="tournament-status" class="pill" style="display:none">idle</span>
+      <select id="model-select" title="Model"></select>
+      <label style="font-size:12px;color:var(--text-dim)">rounds <input id="rounds-input" type="number" min="1" max="20" value="1" style="width:46px;background:var(--panel-2);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px;font:inherit"></label>
+      <button id="run-next-btn" class="primary" title="Run more rounds, continuing from the latest">▶ Run next</button>
+      <button id="run-fresh-btn" title="Wipe rounds and start a new tournament">↻ Fresh</button>
+    </header>
+    <main>
+      <aside id="red-panel" class="side-panel" data-team="red">
+        <div class="panel-header">
+          <h2 class="red">RED <span class="model-pill" data-role="model">—</span></h2>
+        </div>
+        <div class="tab-bar">
+          <button class="tab active" data-tab="comp">Comp</button>
+          <button class="tab" data-tab="code">Code</button>
+          <button class="tab" data-tab="scratch">Scratch</button>
+          <button class="tab" data-tab="reason">Reasoning</button>
+          <button class="tab" data-tab="report">Report</button>
+        </div>
+        <div class="panel-content">
+          <div class="tab-content active" data-tab="comp" data-role="comp"></div>
+          <div class="tab-content code" data-tab="code">
+            <div class="utype-tabs" data-role="utype-tabs"></div>
+            <pre class="code-view" data-role="code"></pre>
+          </div>
+          <div class="tab-content" data-tab="scratch"><pre data-role="scratch"></pre></div>
+          <div class="tab-content" data-tab="reason"><div class="reason-view" data-role="reason"></div></div>
+          <div class="tab-content" data-tab="report"><div class="report-view" data-role="report"></div></div>
+        </div>
+      </aside>
+      <div id="canvas-host"></div>
+      <aside id="blue-panel" class="side-panel" data-team="blue">
+        <div class="panel-header">
+          <h2 class="blue">BLUE <span class="model-pill" data-role="model">—</span></h2>
+        </div>
+        <div class="tab-bar">
+          <button class="tab active" data-tab="comp">Comp</button>
+          <button class="tab" data-tab="code">Code</button>
+          <button class="tab" data-tab="scratch">Scratch</button>
+          <button class="tab" data-tab="reason">Reasoning</button>
+          <button class="tab" data-tab="report">Report</button>
+        </div>
+        <div class="panel-content">
+          <div class="tab-content active" data-tab="comp" data-role="comp"></div>
+          <div class="tab-content code" data-tab="code">
+            <div class="utype-tabs" data-role="utype-tabs"></div>
+            <pre class="code-view" data-role="code"></pre>
+          </div>
+          <div class="tab-content" data-tab="scratch"><pre data-role="scratch"></pre></div>
+          <div class="tab-content" data-tab="reason"><div class="reason-view" data-role="reason"></div></div>
+          <div class="tab-content" data-tab="report"><div class="report-view" data-role="report"></div></div>
+        </div>
+      </aside>
+    </main>
+    <footer>
+      <div class="controls-row">
+        <button id="play-btn" class="primary">▶ Play</button>
+        <button id="step-btn">Step</button>
+        <input type="range" id="scrubber" min="0" max="0" value="0" step="1" />
+        <select id="speed">
+          <option value="0.25">0.25×</option>
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+          <option value="8">8×</option>
+        </select>
+        <span class="tick-display" id="tick-display">tick 0 / 0</span>
+      </div>
+      <div id="event-strip"></div>
+    </footer>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.0/dist/pixi.min.js"></script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

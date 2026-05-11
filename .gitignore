@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local secrets (also lives at ~/.tactica/ outside repo, but belt-and-braces)
+.tactica/
+*.env.local
+litellm.env

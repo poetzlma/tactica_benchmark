@@ -1,0 +1,47 @@
+{
+  "model": "nemotron-3-nano-omni",
+  "base_url": "http://192.168.1.7:4000/v1",
+  "rounds_total": 4,
+  "rounds": [
+    {
+      "round": 1,
+      "file": "round_001.json",
+      "outcome": "red_win",
+      "duration_ticks": 133,
+      "red_alive": 17,
+      "blue_alive": 0,
+      "red_survivors_value": 60,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 2,
+      "file": "round_002.json",
+      "outcome": "red_win",
+      "duration_ticks": 101,
+      "red_alive": 20,
+      "blue_alive": 0,
+      "red_survivors_value": 65,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 3,
+      "file": "round_003.json",
+      "outcome": "red_win",
+      "duration_ticks": 181,
+      "red_alive": 13,
+      "blue_alive": 0,
+      "red_survivors_value": 39,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 4,
+      "file": "round_004.json",
+      "outcome": "blue_win",
+      "duration_ticks": 173,
+      "red_alive": 0,
+      "blue_alive": 21,
+      "red_survivors_value": 0,
+      "blue_survivors_value": 82
+    }
+  ]
+}
