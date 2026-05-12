@@ -681,6 +681,7 @@ class Playback {
 // ---------- minimal markdown renderer ----------
 
 function escapeHtml(s) {
+  // Escape & first, then <, > so substitutions do not double-escape
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 function renderInline(s) {
