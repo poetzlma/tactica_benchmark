@@ -28,11 +28,12 @@ see during the fight and into the post-battle stats.
 | mbt       | 5    | 350 | 15  | 1     | 1      | 4 ticks     | 4      | 6      | heavy AoE; splashes adjacent|
 | infantry  | 3    | 80  | 25  | 1     | 0      | 2 ticks     | 3      | 8      | cheap DPS                   |
 | mortar    | 4    | 50  | 20  | 8     | 0      | 2 ticks     | 6      | 10     | long-range, fragile         |
-| medic     | 4    | 60  | 0   | 4     | 0      | 2 ticks     | 2      | 8      | heals +15/use               |
+| medic     | 4    | 60  | 0   | 4     | 0      | 2 ticks     | 2      | 8      | heals +15/use; heal CD=2     |
 | drone     | 2    | 40  | 8   | 2     | 0      | 1 tick      | 3      | 18     | fast, scout, weak           |
 
 - `move period` = ticks between movements (a unit with period 4 moves once every 4 ticks).
-- `atk CD` = ticks until you can attack again after attacking.
+- `atk CD` = ticks until you can attack again after attacking (also used for heal cooldown by default).
+- Medics have a separate `heal CD` (same as `atk CD` in current specs) that applies after healing.
 - `range` for medic is heal range; medic deals zero damage.
 - `splash` = area-of-effect radius (Chebyshev). 0 = single-target. >0 = the attack
   also hits every OTHER unit within `splash` cells of the target. **Other enemies
