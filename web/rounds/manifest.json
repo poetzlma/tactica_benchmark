@@ -1,7 +1,7 @@
 {
   "model": "nemotron-3-nano-omni",
   "base_url": "http://192.168.1.7:4000/v1",
-  "rounds_total": 4,
+  "rounds_total": 19,
   "rounds": [
     {
       "round": 1,
@@ -42,6 +42,146 @@
       "blue_alive": 21,
       "red_survivors_value": 0,
       "blue_survivors_value": 82
+    },
+    {
+      "round": 5,
+      "file": "round_005.json",
+      "outcome": "blue_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 12,
+      "blue_alive": 16,
+      "red_survivors_value": 42,
+      "blue_survivors_value": 68
+    },
+    {
+      "round": 6,
+      "file": "round_006.json",
+      "outcome": "red_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 12,
+      "blue_alive": 10,
+      "red_survivors_value": 46,
+      "blue_survivors_value": 40
+    },
+    {
+      "round": 7,
+      "file": "round_007.json",
+      "outcome": "red_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 9,
+      "blue_alive": 7,
+      "red_survivors_value": 39,
+      "blue_survivors_value": 28
+    },
+    {
+      "round": 8,
+      "file": "round_008.json",
+      "outcome": "red_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 8,
+      "blue_alive": 9,
+      "red_survivors_value": 32,
+      "blue_survivors_value": 30
+    },
+    {
+      "round": 9,
+      "file": "round_009.json",
+      "outcome": "red_win",
+      "duration_ticks": 248,
+      "red_alive": 15,
+      "blue_alive": 0,
+      "red_survivors_value": 60,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 10,
+      "file": "round_010.json",
+      "outcome": "blue_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 28,
+      "blue_alive": 30,
+      "red_survivors_value": 96,
+      "blue_survivors_value": 100
+    },
+    {
+      "round": 11,
+      "file": "round_011.json",
+      "outcome": "red_win",
+      "duration_ticks": 338,
+      "red_alive": 5,
+      "blue_alive": 0,
+      "red_survivors_value": 21,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 12,
+      "file": "round_012.json",
+      "outcome": "red_win",
+      "duration_ticks": 112,
+      "red_alive": 23,
+      "blue_alive": 0,
+      "red_survivors_value": 77,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 13,
+      "file": "round_013.json",
+      "outcome": "red_win",
+      "duration_ticks": 132,
+      "red_alive": 21,
+      "blue_alive": 0,
+      "red_survivors_value": 75,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 14,
+      "file": "round_014.json",
+      "outcome": "red_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 21,
+      "blue_alive": 17,
+      "red_survivors_value": 69,
+      "blue_survivors_value": 59
+    },
+    {
+      "round": 15,
+      "file": "round_015.json",
+      "outcome": "red_win",
+      "duration_ticks": 154,
+      "red_alive": 31,
+      "blue_alive": 0,
+      "red_survivors_value": 97,
+      "blue_survivors_value": 0
+    },
+    {
+      "round": 16,
+      "file": "round_016.json",
+      "outcome": "red_win_timeout",
+      "duration_ticks": 1200,
+      "red_alive": 4,
+      "blue_alive": 3,
+      "red_survivors_value": 14,
+      "blue_survivors_value": 9
+    },
+    {
+      "round": 17,
+      "file": "round_017.json",
+      "outcome": "blue_win",
+      "duration_ticks": 258,
+      "red_alive": 0,
+      "blue_alive": 15,
+      "red_survivors_value": 0,
+      "blue_survivors_value": 56
+    },
+    {
+      "round": 18,
+      "file": "round_018.json",
+      "outcome": "red_win",
+      "duration_ticks": 167,
+      "red_alive": 6,
+      "blue_alive": 0,
+      "red_survivors_value": 29,
+      "blue_survivors_value": 0
     }
   ]
 }

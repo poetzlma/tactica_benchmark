@@ -65,7 +65,7 @@ class Recorder:
             "events": list(self.world.frame_events),
         })
 
-    def finalize(self, result, red_report=None, blue_report=None):
+    def finalize(self, result, red_report=None, blue_report=None, heatmaps=None):
         stats_dump = {}
         for team, ts in result["stats"].items():
             stats_dump[team.value] = {
@@ -75,6 +75,8 @@ class Recorder:
                     ut.value: dict(pt) for ut, pt in ts["per_type"].items()
                 },
             }
+        if heatmaps is None:
+            heatmaps = self.compute_heatmaps()
         return {
             **self.header,
             "frames": self.frames,
@@ -86,10 +88,66 @@ class Recorder:
             "blue_survivors_value": result["blue_survivors_value"],
             "stats": stats_dump,
             "event_log": [[t, msg] for (t, msg) in result["event_log"]],
+            "heatmaps": heatmaps,
             "reports": {
                 "red": red_report or "",
                 "blue": blue_report or "",
             },
+        }
+
+    def compute_heatmaps(self):
+        """Sweep recorded frames to build per-cell counters for the round.
+
+        Returns a dict with width/height plus six flat row-major arrays:
+        presence/damage/deaths × {red, blue}. Used by the web UI overlay
+        and downsampled to ASCII for the LLM's next-round report.
+        """
+        w = self.world.width
+        h = self.world.height
+        team_of = {u["id"]: u["team"] for u in self.header["unit_index"]}
+        size = w * h
+
+        def _zeros():
+            return [0] * size
+
+        presence = {"red": _zeros(), "blue": _zeros()}
+        damage = {"red": _zeros(), "blue": _zeros()}
+        deaths = {"red": _zeros(), "blue": _zeros()}
+
+        prev_pos = {}  # id -> (x, y) from previous frame (used to locate kills)
+        for frame in self.frames:
+            cur_pos = {}
+            for uid, x, y, _hp in frame["units"]:
+                cur_pos[uid] = (x, y)
+                team = team_of.get(uid)
+                if team and 0 <= x < w and 0 <= y < h:
+                    presence[team][y * w + x] += 1
+            for ev in frame.get("events", []):
+                if ev.get("kind") == "attack":
+                    attacker_team = team_of.get(ev.get("from_id"))
+                    pos = cur_pos.get(ev.get("from_id")) or prev_pos.get(ev.get("from_id"))
+                    dmg = int(ev.get("dmg", 0))
+                    if attacker_team and pos and dmg > 0:
+                        x, y = pos
+                        if 0 <= x < w and 0 <= y < h:
+                            damage[attacker_team][y * w + x] += dmg
+                elif ev.get("kind") == "kill":
+                    victim_team = team_of.get(ev.get("victim_id"))
+                    # Victim already alive=False this frame, so look up position
+                    # from previous frame where they last appeared.
+                    pos = prev_pos.get(ev.get("victim_id")) or cur_pos.get(ev.get("victim_id"))
+                    if victim_team and pos:
+                        x, y = pos
+                        if 0 <= x < w and 0 <= y < h:
+                            deaths[victim_team][y * w + x] += 1
+            prev_pos = cur_pos
+
+        return {
+            "width": w,
+            "height": h,
+            "presence": presence,
+            "damage_dealt": damage,
+            "deaths": deaths,
         }
 
 

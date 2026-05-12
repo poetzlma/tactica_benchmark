@@ -23,17 +23,37 @@ see during the fight and into the post-battle stats.
 
 # Unit types
 
-| type      | cost | hp  | dmg | range | move period | atk CD | vision | notes               |
-|-----------|------|-----|-----|-------|-------------|--------|--------|---------------------|
-| mbt       | 5    | 200 | 15  | 1     | 4 ticks     | 4      | 6      | tank, slow, durable |
-| infantry  | 3    | 80  | 25  | 1     | 2 ticks     | 3      | 8      | cheap DPS           |
-| mortar    | 4    | 50  | 20  | 8     | 2 ticks     | 6      | 10     | long-range, fragile |
-| medic     | 4    | 60  | 0   | 4     | 2 ticks     | 2      | 8      | heals +15/use       |
-| drone     | 2    | 40  | 8   | 2     | 1 tick      | 3      | 18     | fast, scout, weak   |
+| type      | cost | hp  | dmg | range | splash | move period | atk CD | vision | notes                       |
+|-----------|------|-----|-----|-------|--------|-------------|--------|--------|-----------------------------|
+| mbt       | 5    | 350 | 15  | 1     | 1      | 4 ticks     | 4      | 6      | heavy AoE; splashes adjacent|
+| infantry  | 3    | 80  | 25  | 1     | 0      | 2 ticks     | 3      | 8      | cheap DPS                   |
+| mortar    | 4    | 50  | 20  | 8     | 0      | 2 ticks     | 6      | 10     | long-range, fragile         |
+| medic     | 4    | 60  | 0   | 4     | 0      | 2 ticks     | 2      | 8      | heals +15/use               |
+| drone     | 2    | 40  | 8   | 2     | 0      | 1 tick      | 3      | 18     | fast, scout, weak           |
 
 - `move period` = ticks between movements (a unit with period 4 moves once every 4 ticks).
 - `atk CD` = ticks until you can attack again after attacking.
 - `range` for medic is heal range; medic deals zero damage.
+- `splash` = area-of-effect radius (Chebyshev). 0 = single-target. >0 = the attack
+  also hits every OTHER unit within `splash` cells of the target. **Other enemies
+  in the blast take FULL damage. Friendlies in the blast take HALF damage
+  (rounded down).** The attacker itself is never hit by its own splash.
+
+# AoE & friendly fire — important
+
+Only the **mbt** has splash today (radius 1 → 8 surrounding cells + the target).
+A tank that fires into a clustered enemy formation can deal damage to several
+units at once. But a tank firing into a melee where your own infantry are
+adjacent to the target **will damage your own units** — at half damage, but it
+adds up.
+
+Tactical implications:
+- Tanks in the front line are high-value: they soak hits AND splash multiple
+  attackers. With 350 HP they survive ~14 infantry hits.
+- Don't park your mortars/infantry directly adjacent to enemies your own tanks
+  are about to shoot — keep a one-cell gap or accept the friendly fire.
+- Pushing units to clump tightly into a tank's range is now a punishment, not
+  just a hit.
 
 # Your code
 
@@ -209,6 +229,20 @@ class Tactic:
 Free text. Your notes to your future self for next round. You DO NOT remember
 across rounds except via this scratchpad. Be concrete: hypotheses, what worked,
 what didn't, observations about opponent patterns.
+
+**Scratchpad budget: ≤ 1500 characters (~400 tokens).** It will be hard-truncated
+above this and you will lose the tail. Use sections; compact ruthlessly.
+Recommended structure:
+
+  HYPOTHESES — testable beliefs about opponent / map / meta. Drop any that
+               were proven or disproven this round. New ones welcome.
+  OPPONENT   — patterns observed across rounds (composition trends, formation,
+               favoured chokes). One line per pattern.
+  TODO_NEXT  — concrete code/comp changes for *next* round. Imperative, short.
+
+Anything older than 2 rounds should already be either confirmed (move to
+OPPONENT as a 1-line pattern) or dropped. Do NOT copy the previous scratchpad
+verbatim — re-author it tighter every round.
 
 Rules:
 - composition values must be non-negative integers summing to ≤ 100 pts total.

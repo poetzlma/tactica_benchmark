@@ -10,6 +10,46 @@ composition after the battle) but NOT the opponent's code or scratchpad.
 from .types import Team, UnitType
 from .unit_specs import UNIT_SPECS
 
+# 7-level ramp for nonzero bins, low → high. Empty bins use '.' below.
+HEATMAP_RAMP = ":-+*#%@"
+HEATMAP_BIN_W = 4  # 64 / 4 = 16 cols
+HEATMAP_BIN_H = 4  # 36 / 4 = 9 rows
+
+
+def _downsample(grid_flat, src_w, src_h, bin_w, bin_h):
+    out_w = (src_w + bin_w - 1) // bin_w
+    out_h = (src_h + bin_h - 1) // bin_h
+    out = [[0] * out_w for _ in range(out_h)]
+    for y in range(src_h):
+        for x in range(src_w):
+            v = grid_flat[y * src_w + x]
+            if v:
+                out[y // bin_h][x // bin_w] += v
+    return out, out_w, out_h
+
+
+def _render_heatmap(title, grid_flat, src_w, src_h):
+    binned, w, h = _downsample(grid_flat, src_w, src_h, HEATMAP_BIN_W, HEATMAP_BIN_H)
+    peak = max((max(row) for row in binned), default=0)
+    if peak == 0:
+        return [f"### {title}", "(no activity)"]
+    lines = [f"### {title}", f"_{w}×{h} bins, each bin = {HEATMAP_BIN_W}×{HEATMAP_BIN_H} cells; peak={peak}_", "```"]
+    # Header: x-axis labels every other column
+    header = "  " + "".join(str((c * HEATMAP_BIN_W) // 10 % 10) if c % 2 == 0 else " " for c in range(w))
+    lines.append(header)
+    for r, row in enumerate(binned):
+        chars = []
+        for v in row:
+            if v == 0:
+                chars.append(".")
+            else:
+                idx = min(len(HEATMAP_RAMP) - 1, int(v / peak * (len(HEATMAP_RAMP) - 1) + 0.5))
+                chars.append(HEATMAP_RAMP[idx])
+        y_label = f"{(r * HEATMAP_BIN_H):2d}"
+        lines.append(f"{y_label} {''.join(chars)}")
+    lines.append("```")
+    return lines
+
 
 def _outcome_for(team: str, outcome: str) -> str:
     if outcome == "draw" or outcome == "draw_timeout":
@@ -47,7 +87,7 @@ def _stats_table(team_stats: dict) -> list:
     return lines
 
 
-def generate_report(team: str, result: dict, my_brief, opp_brief) -> str:
+def generate_report(team: str, result: dict, my_brief, opp_brief, heatmaps: dict = None) -> str:
     team_enum = Team.RED if team == "red" else Team.BLUE
     opp = "blue" if team == "red" else "red"
 
@@ -98,6 +138,31 @@ def generate_report(team: str, result: dict, my_brief, opp_brief) -> str:
     else:
         lines.append("- (no kills logged — likely a stalemate)")
     lines.append("")
+
+    if heatmaps:
+        lines.append("## Spatial recap")
+        lines.append(
+            "Where things happened on the 64×36 grid. "
+            "Bins shown are 4×4 cells. Y grows downward. "
+            "Density: `.` empty → `:-+*#%@` increasing. "
+            "RED spawns at the LEFT (~x=5); BLUE spawns at the RIGHT (~x=58). "
+            "The `peak` is the count in the busiest bin — use it to gauge magnitude."
+        )
+        lines.append("")
+        w = heatmaps.get("width", 64)
+        h = heatmaps.get("height", 36)
+        my_deaths = heatmaps.get("deaths", {}).get(team, [])
+        my_dmg = heatmaps.get("damage_dealt", {}).get(team, [])
+        opp_presence = heatmaps.get("presence", {}).get(opp, [])
+        if my_deaths:
+            lines.extend(_render_heatmap("Where YOUR units died", my_deaths, w, h))
+            lines.append("")
+        if my_dmg:
+            lines.extend(_render_heatmap("Where YOU dealt damage from", my_dmg, w, h))
+            lines.append("")
+        if opp_presence:
+            lines.extend(_render_heatmap("Where the ENEMY spent time (unit-ticks)", opp_presence, w, h))
+            lines.append("")
 
     lines.append("## Your scratchpad from last round")
     sp = my_brief.scratchpad.strip()

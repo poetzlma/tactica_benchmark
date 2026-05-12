@@ -171,9 +171,11 @@ def main(argv=None):
 
     if args.record:
         rec = recorder_box[0]
-        red_report = generate_report("red", r1, red_brief, blue_brief)
-        blue_report = generate_report("blue", r1, blue_brief, red_brief)
-        data = rec.finalize(r1, red_report=red_report, blue_report=blue_report)
+        heatmaps = rec.compute_heatmaps()
+        red_report = generate_report("red", r1, red_brief, blue_brief, heatmaps=heatmaps)
+        blue_report = generate_report("blue", r1, blue_brief, red_brief, heatmaps=heatmaps)
+        data = rec.finalize(r1, red_report=red_report, blue_report=blue_report,
+                            heatmaps=heatmaps)
         dump_json(data, args.record)
         print(f"\nRecording written: {args.record} ({len(rec.frames)} frames)")
 

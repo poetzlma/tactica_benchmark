@@ -27,6 +27,7 @@ class UnitSpec:
     vision: int
     can_heal: bool = False
     heal_amount: int = 0
+    splash_radius: int = 0  # 0 = single-target. >0 = full damage to other enemies in radius, half to friendlies.
 
 
 @dataclass

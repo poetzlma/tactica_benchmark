@@ -26,6 +26,22 @@ RETRY_FEEDBACK_TEMPLATE = """Your previous response had {n} validation error(s):
 Fix the issues and resubmit using the same EXACT delimited format from the
 system prompt. No prose, no code fences, no JSON wrapping."""
 
+# Hard cap on scratchpad size carried into the next round's prompt.
+# The system prompt asks the model to stay under 1500 chars; this is the safety
+# net that enforces it regardless of what the model actually writes.
+MAX_SCRATCHPAD_CHARS = 1500
+SCRATCHPAD_TRUNCATION_MARK = "\n[... truncated to fit budget — earlier notes lost ...]"
+
+
+def _enforce_scratchpad_budget(sp: str, log=print, team: str = "?") -> str:
+    if not sp:
+        return ""
+    if len(sp) <= MAX_SCRATCHPAD_CHARS:
+        return sp
+    keep = MAX_SCRATCHPAD_CHARS - len(SCRATCHPAD_TRUNCATION_MARK)
+    log(f"    [{team}] scratchpad over budget ({len(sp)} > {MAX_SCRATCHPAD_CHARS} chars) — truncating")
+    return sp[:keep].rstrip() + SCRATCHPAD_TRUNCATION_MARK
+
 
 def _format_errors(errors):
     return "\n".join(f"- {e}" for e in errors)
@@ -69,7 +85,7 @@ def get_brief_from_llm(client, model, team, round_n, prev_report, *,
                 reasoning=resp["reasoning_content"] or "",
                 composition=parsed["composition"],
                 tactics=parsed["tactics"],
-                scratchpad=parsed["scratchpad"],
+                scratchpad=_enforce_scratchpad_budget(parsed["scratchpad"], log=log, team=team),
             )
 
         log(f"    [{team}] validation failed:")
@@ -160,11 +176,13 @@ def run_one_round(client, model, round_n, seed, prev_reports, out_dir, log=print
     log(f"    BLUE alive: {result['blue_alive']} ({result['blue_survivors_value']} pts) "
         f"crashes: {result['stats'][Team.BLUE]['crashes']}")
 
-    red_report = generate_report("red", result, red_brief, blue_brief)
-    blue_report = generate_report("blue", result, blue_brief, red_brief)
-
     rec = recorder_box[0]
-    data = rec.finalize(result, red_report=red_report, blue_report=blue_report)
+    heatmaps = rec.compute_heatmaps() if rec else None
+    red_report = generate_report("red", result, red_brief, blue_brief, heatmaps=heatmaps)
+    blue_report = generate_report("blue", result, blue_brief, red_brief, heatmaps=heatmaps)
+
+    data = rec.finalize(result, red_report=red_report, blue_report=blue_report,
+                        heatmaps=heatmaps)
 
     fname = f"round_{round_n:03d}.json"
     path = os.path.join(out_dir, fname)

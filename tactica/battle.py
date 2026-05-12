@@ -58,31 +58,57 @@ def _resolve(world, unit, action):
             return False
         if not me_view.can_attack(target):
             return False
-        dmg = unit.spec.damage
-        target.hp -= dmg
-        unit.dmg_dealt += dmg
-        target.dmg_taken += dmg
+        base_dmg = unit.spec.damage
+        splash = unit.spec.splash_radius
         unit.cooldown = unit.spec.attack_cooldown
-        world.frame_events.append({
-            "kind": "attack",
-            "from_id": unit.id,
-            "to_id": target.id,
-            "dmg": dmg,
-        })
-        if target.hp <= 0:
-            target.alive = False
-            target.death_tick = world.tick
-            unit.kills_made += 1
+
+        # Build hit list: (victim, damage). Primary target always full damage.
+        hits = [(target, base_dmg, "primary")]
+        if splash > 0:
+            tx, ty = target.pos
+            for other in list(world.units.values()):
+                if other is unit or other is target or not other.alive:
+                    continue
+                ox, oy = other.pos
+                if max(abs(ox - tx), abs(oy - ty)) > splash:
+                    continue
+                if other.team == unit.team:
+                    # Friendly fire: half damage (rounded down).
+                    fdmg = base_dmg // 2
+                    if fdmg > 0:
+                        hits.append((other, fdmg, "splash_friendly"))
+                else:
+                    # Enemy in splash radius: full damage.
+                    hits.append((other, base_dmg, "splash_enemy"))
+
+        for victim, dmg, kind in hits:
+            victim.hp -= dmg
+            unit.dmg_dealt += dmg
+            victim.dmg_taken += dmg
             world.frame_events.append({
-                "kind": "kill",
-                "killer_id": unit.id,
-                "victim_id": target.id,
+                "kind": "attack",
+                "from_id": unit.id,
+                "to_id": victim.id,
+                "dmg": dmg,
+                "splash": kind != "primary",
+                "friendly_fire": kind == "splash_friendly",
             })
-            world.event_log.append((
-                world.tick,
-                f"{unit.team.value} {unit.type.value}#{unit.id} killed "
-                f"{target.team.value} {target.type.value}#{target.id} at {target.pos}",
-            ))
+            if victim.hp <= 0 and victim.alive:
+                victim.alive = False
+                victim.death_tick = world.tick
+                unit.kills_made += 1
+                world.frame_events.append({
+                    "kind": "kill",
+                    "killer_id": unit.id,
+                    "victim_id": victim.id,
+                })
+                killed_by = "splash-killed" if kind != "primary" else "killed"
+                ff_tag = " (FRIENDLY FIRE)" if kind == "splash_friendly" else ""
+                world.event_log.append((
+                    world.tick,
+                    f"{unit.team.value} {unit.type.value}#{unit.id} {killed_by} "
+                    f"{victim.team.value} {victim.type.value}#{victim.id} at {victim.pos}{ff_tag}",
+                ))
         return True
     if action.kind == "heal":
         target = world.units.get(action.target_id)

@@ -159,12 +159,13 @@ class Renderer {
     hostEl.appendChild(this.app.view);
 
     this.terrainLayer = new PIXI.Container();
+    this.heatmapLayer = new PIXI.Container();
     this.visionLayer = new PIXI.Container();
     this.shadowLayer = new PIXI.Container();
     this.unitLayer = new PIXI.Container();
     this.effectLayer = new PIXI.Container();
     this.app.stage.addChild(
-      this.terrainLayer, this.visionLayer, this.shadowLayer,
+      this.terrainLayer, this.heatmapLayer, this.visionLayer, this.shadowLayer,
       this.unitLayer, this.effectLayer,
     );
 
@@ -577,6 +578,53 @@ class Renderer {
     }});
   }
 
+  clearHeatmap() {
+    this.heatmapLayer.removeChildren().forEach((c) => c.destroy());
+  }
+
+  renderHeatmap(heatmaps, mode, teams) {
+    this.clearHeatmap();
+    if (!heatmaps || mode === "off" || !teams || teams.length === 0) return null;
+    const grids = heatmaps[mode];
+    if (!grids) return null;
+    const w = heatmaps.width || this.map.width;
+    const h = heatmaps.height || this.map.height;
+
+    // Find shared peak across selected teams so cross-team intensity is comparable.
+    let peak = 0;
+    for (const t of teams) {
+      const g = grids[t];
+      if (!g) continue;
+      for (let i = 0; i < g.length; i++) if (g[i] > peak) peak = g[i];
+    }
+    if (peak <= 0) return { peak: 0, mode, teams };
+
+    // Per-team palette: base color + alpha scaling. Each tint blended additively.
+    const palette = {
+      red:  { deaths: 0xff4848, damage_dealt: 0xff8030, presence: 0xc04040 },
+      blue: { deaths: 0x4090e0, damage_dealt: 0x40c8e0, presence: 0x4070c0 },
+    };
+
+    const g = new PIXI.Graphics();
+    for (const team of teams) {
+      const grid = grids[team];
+      if (!grid) continue;
+      const color = (palette[team] && palette[team][mode]) || 0xffffff;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const v = grid[y * w + x];
+          if (v <= 0) continue;
+          const t = v / peak;
+          // Soft non-linear ramp so faint cells are still visible.
+          const a = Math.min(0.85, 0.18 + Math.pow(t, 0.6) * 0.65);
+          g.beginFill(color, a).drawRect(x * CELL, y * CELL, CELL, CELL).endFill();
+        }
+      }
+    }
+    this.heatmapLayer.addChild(g);
+    return { peak, mode, teams };
+  }
+
   tickEffects(dtMs) {
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const e = this.effects[i];
@@ -899,14 +947,83 @@ async function main() {
     const data = file
       ? await loadBattleFile(`rounds/${file}`)
       : await loadBattle();
+    // Preserve the heatmap toolbar across re-renders; only the canvas redraws.
+    const bar = document.getElementById("heatmap-bar");
+    const legend = document.getElementById("heatmap-legend");
     host.innerHTML = "";
+    if (bar) host.appendChild(bar);
+    if (legend) host.appendChild(legend);
     renderer = new Renderer(data, host);
     ui = new UI(data);
     pb = new Playback(data, renderer, ui);
     pb.setFrame(0, 0);
     bindPlaybackControls();
+    applyHeatmap(data);
     return data;
   }
+
+  // ---------- heatmap toolbar (persistent across rounds) ----------
+
+  const heatmapState = { mode: "off", teams: new Set(["red", "blue"]) };
+
+  function setHeatmapButtons() {
+    const bar = document.getElementById("heatmap-bar");
+    bar.querySelectorAll("[data-hm-mode]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.hmMode === heatmapState.mode);
+    });
+    bar.querySelectorAll("[data-hm-team]").forEach((b) => {
+      b.classList.toggle("active", heatmapState.teams.has(b.dataset.hmTeam));
+    });
+  }
+
+  function applyHeatmap(data) {
+    if (!renderer) return;
+    const battle = data || (pb && pb.battle);
+    const heatmaps = battle && battle.heatmaps;
+    const result = renderer.renderHeatmap(
+      heatmaps, heatmapState.mode, [...heatmapState.teams]
+    );
+    const legendEl = document.getElementById("heatmap-legend");
+    if (heatmapState.mode === "off" || !result || result.peak === 0) {
+      legendEl.classList.remove("visible");
+      legendEl.innerHTML = "";
+    } else {
+      const labels = {
+        deaths: "deaths per cell",
+        damage_dealt: "damage dealt from cell",
+        presence: "unit-ticks in cell",
+      };
+      const teamsTxt = [...heatmapState.teams].join(" + ") || "(none)";
+      legendEl.classList.add("visible");
+      legendEl.innerHTML =
+        `<strong>${labels[heatmapState.mode]}</strong> · ${teamsTxt} · ` +
+        `<span class="legend-bar" style="background:linear-gradient(to right,rgba(255,255,255,0.05),rgba(255,255,255,0.85))"></span>` +
+        ` 0 → ${result.peak}`;
+    }
+  }
+
+  function bindHeatmapBar() {
+    const bar = document.getElementById("heatmap-bar");
+    bar.querySelectorAll("[data-hm-mode]").forEach((b) => {
+      b.addEventListener("click", () => {
+        heatmapState.mode = b.dataset.hmMode;
+        setHeatmapButtons();
+        applyHeatmap();
+      });
+    });
+    bar.querySelectorAll("[data-hm-team]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const t = b.dataset.hmTeam;
+        if (heatmapState.teams.has(t)) heatmapState.teams.delete(t);
+        else heatmapState.teams.add(t);
+        setHeatmapButtons();
+        applyHeatmap();
+      });
+    });
+    setHeatmapButtons();
+  }
+
+  bindHeatmapBar();
 
   function bindPlaybackControls() {
     ui.playBtn.onclick = () => pb.toggle();

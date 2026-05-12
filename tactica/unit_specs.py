@@ -3,8 +3,9 @@ from .types import UnitSpec, UnitType
 
 UNIT_SPECS = {
     UnitType.MBT: UnitSpec(
-        cost=5, max_hp=200, damage=15, range=1,
+        cost=5, max_hp=350, damage=15, range=1,
         move_period=4, attack_cooldown=4, vision=6,
+        splash_radius=1,
     ),
     UnitType.INFANTRY: UnitSpec(
         cost=3, max_hp=80, damage=25, range=1,
