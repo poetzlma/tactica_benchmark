@@ -709,9 +709,10 @@ function escapeHtml(s) {
 }
 function renderInline(s) {
   let out = escapeHtml(s);
-  out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-  out = out.replace(/(^|[^_])_([^_]+)_/g, "$1<em>$2</em>");
-  out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+  out = out.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(/(^|[^_])_([^_]+?)_/g, "$1<em>$2</em>");
+  // Non-greedy +? prevents merging adjacent inline code spans
+  out = out.replace(/`([^`]+?)`/g, "<code>$1</code>");
   return out;
 }
 function renderMarkdown(md) {
