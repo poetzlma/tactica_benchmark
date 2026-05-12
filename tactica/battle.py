@@ -118,7 +118,7 @@ def _resolve(world, unit, action):
             return False
         heal = unit.spec.heal_amount
         target.hp = min(target.hp + heal, target.spec.max_hp)
-        unit.cooldown = unit.spec.attack_cooldown
+        unit.cooldown = unit.spec.heal_cool()
         world.frame_events.append({
             "kind": "heal",
             "from_id": unit.id,

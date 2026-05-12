@@ -27,7 +27,12 @@ class UnitSpec:
     vision: int
     can_heal: bool = False
     heal_amount: int = 0
+    heal_cooldown: int = 0
     splash_radius: int = 0  # 0 = single-target. >0 = full damage to other enemies in radius, half to friendlies.
+
+    def heal_cool(self) -> int:
+        """Return the cooldown ticks for healing: heal_cooldown if set (>0), else attack_cooldown."""
+        return self.heal_cooldown if self.heal_cooldown > 0 else self.attack_cooldown
 
 
 @dataclass
