@@ -24,6 +24,8 @@ class Recorder:
                 "vision": spec.vision,
                 "can_heal": spec.can_heal,
                 "heal_amount": spec.heal_amount,
+                "heal_cooldown": spec.heal_cooldown,
+                "heal_cool": spec.heal_cool(),
             }
         self.header = {
             "version": 1,

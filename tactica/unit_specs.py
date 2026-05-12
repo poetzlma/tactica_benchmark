@@ -19,6 +19,7 @@ UNIT_SPECS = {
         cost=4, max_hp=60, damage=0, range=4,
         move_period=2, attack_cooldown=2, vision=8,
         can_heal=True, heal_amount=15,
+        heal_cooldown=2,
     ),
     UnitType.DRONE: UnitSpec(
         cost=2, max_hp=40, damage=8, range=2,
