@@ -637,6 +637,15 @@ class Renderer {
       } else e.update(e);
     }
   }
+
+  clearEffects() {
+    for (const e of this.effects) {
+      if (e.onDone) e.onDone();
+      this.effectLayer.removeChild(e.gfx);
+      e.gfx.destroy();
+    }
+    this.effects = [];
+  }
 }
 
 class Playback {
@@ -652,6 +661,11 @@ class Playback {
     this.frameIdx = Math.max(0, Math.min(i, this.totalFrames() - 1));
     this.alpha = alpha;
     if (this.frameIdx !== prev) {
+      // Clear existing effects on non-sequential jumps (scrubbing, rewind)
+      // to prevent accumulation of duplicate visual effects.
+      if (this.frameIdx !== prev + 1) {
+        this.renderer.clearEffects();
+      }
       const frame = this.battle.frames[this.frameIdx];
       this.renderer.spawnEffectsForFrame(frame);
       this.ui.appendEvents(frame);
