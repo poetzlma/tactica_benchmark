@@ -330,9 +330,18 @@ class Renderer {
           const [px, py] = s.lastTickPos;
           if (px !== cx || py !== cy) {
             const targetAngle = angleBetween(px, py, cx, cy);
-            // Smooth-rotate toward target
-            const delta = shortestAngleDelta(s.facing, targetAngle);
-            s.facing += delta * 0.6;  // 60% step
+            // Smooth-rotate toward target.
+            // Normalize current facing to [-pi, pi) first so
+            // shortestAngleDelta works correctly and facing
+            // doesn't drift outside the valid range.
+            let cur = s.facing;
+            while (cur > Math.PI) cur -= 2 * Math.PI;
+            while (cur < -Math.PI) cur += 2 * Math.PI;
+            const delta = shortestAngleDelta(cur, targetAngle);
+            s.facing = cur + delta * 0.6;  // 60% step
+            // Re-normalize after update
+            if (s.facing > Math.PI) s.facing -= 2 * Math.PI;
+            if (s.facing < -Math.PI) s.facing += 2 * Math.PI;
           }
         }
         s.lastTickPos = [cx, cy];
