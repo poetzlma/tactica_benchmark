@@ -81,7 +81,7 @@ def _resolve(world, unit, action):
                     # Enemy in splash radius: full damage.
                     hits.append((other, base_dmg, "splash_enemy"))
 
-        for victim, dmg, kind in hits:
+        for victim, dmg, hit_kind in hits:
             victim.hp -= dmg
             unit.dmg_dealt += dmg
             victim.dmg_taken += dmg
@@ -90,8 +90,8 @@ def _resolve(world, unit, action):
                 "from_id": unit.id,
                 "to_id": victim.id,
                 "dmg": dmg,
-                "splash": kind != "primary",
-                "friendly_fire": kind == "splash_friendly",
+                "splash": hit_kind != "primary",
+                "friendly_fire": hit_kind == "splash_friendly",
             })
             if victim.hp <= 0 and victim.alive:
                 victim.alive = False
@@ -102,8 +102,8 @@ def _resolve(world, unit, action):
                     "killer_id": unit.id,
                     "victim_id": victim.id,
                 })
-                killed_by = "splash-killed" if kind != "primary" else "killed"
-                ff_tag = " (FRIENDLY FIRE)" if kind == "splash_friendly" else ""
+                killed_by = "splash-killed" if hit_kind != "primary" else "killed"
+                ff_tag = " (FRIENDLY FIRE)" if hit_kind == "splash_friendly" else ""
                 world.event_log.append((
                     world.tick,
                     f"{unit.team.value} {unit.type.value}#{unit.id} {killed_by} "
